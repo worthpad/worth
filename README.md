@@ -23,3 +23,7 @@ Funds accrued in the Worth DVC Fund will be used to fund exciting projects incub
 **Worth Accelerator**
 
 ![Worth Accelerator](https://user-images.githubusercontent.com/94482478/142051650-05e8e961-5b55-4518-a0d8-3767477fcab1.jpg)
+
+**Worth SC Foundry**
+
+![Worthpad - Worth SC Foundry](https://user-images.githubusercontent.com/94482478/142214475-5de8745b-da45-4ee4-8242-a8abb18d48b7.jpg)
