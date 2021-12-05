@@ -641,7 +641,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     /* Parameters   : Max Amount of token to be swapped */
     /* Only Owner Function */
     function setMaxTxAmount(uint256 maxTxAmount) external onlyOwner {
-        require(maxTxAmount > 0 && maxTxAmount < (TOTAL_SUPPLY/FEES_DIVISOR), "Max Transaction Amount should be greater than 0 and less than 0.1% of the total supply");
+        require(maxTxAmount > 0 && maxTxAmount < (TOTAL_SUPPLY.div(FEES_DIVISOR)), "Max Transaction Amount should be greater than 0 and less than 0.1% of the total supply");
         _maxTxAmount = maxTxAmount * 10**DECIMALS;
         emit SetMaxTxAmountEvent(maxTxAmount);
     }
