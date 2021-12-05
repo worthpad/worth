@@ -214,7 +214,7 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
     ) external;
 }
 
-/* Main Contract of WorthToken starts here */
+/* Main Contract of Worthpad Token starts here */
 contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
@@ -224,12 +224,11 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
 
     mapping (address => bool) private _isExcludedFromFee;
 
-    string private constant NAME = "WorthToken";
+    string private constant NAME = "Worthpad";
     string private constant SYMBOL = "WORTH";
-    uint8 private constant DECIMAL = 18;
-    uint256 private constant DECIMALS = 10**18;
+    uint8 private constant DECIMALS = 18;
     uint256 private constant FEES_DIVISOR = 10**3; 
-    uint256 private constant TOTAL_SUPPLY = 100 * 10**9 * DECIMALS; 
+    uint256 private constant TOTAL_SUPPLY = 100 * 10**9 * 10**DECIMALS; 
  
     uint256 public _liquidityFee = 25;
     uint256 private _previousLiquidityFee = _liquidityFee;
@@ -238,22 +237,22 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     address public worthDVCFundWallet;
     uint256 private _previousWorthDVCFundFee = _worthDVCFundFee;
 
-    uint256 public _maxTxAmount = 10 * 10**6 * DECIMALS;
+    uint256 public _maxTxAmount = 10 * 10**6 * 10**DECIMALS;
 
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
     
-    bool inSwapAndLiquify;
+    bool private inSwapAndLiquify;
     bool public swapAndLiquifyEnabled = true;
 
-    uint256 private numTokensSellToAddToLiquidity = 1 * 10**6 * DECIMALS;
+    uint256 private numTokensSellToAddToLiquidity = 1 * 10**6 * 10**DECIMALS;
     
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event SwapAndLiquify(
         uint256 tokensSwapped,
         uint256 ethReceived,
-        uint256 tokensIntoLiqudity
+        uint256 tokensIntoLiquidity
     );
     
     modifier lockTheSwap {
@@ -262,7 +261,17 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         inSwapAndLiquify = false;
     }
     
+    event ExcludeFromFeeEvent(bool value);
+    event IncludeInFeeEvent(bool value);
+    event SetWorthDVCFundWalletEvent(address value);
+    event SetLiquidityFeePercentEvent(uint256 value);
+    event SetWorthDVCFundFeePercentEvent(uint256 value);
+    event SetMinSellEvent(uint256 value);
+    event SetMaxTxAmountEvent(uint256 value);
+    event SetRouterAddressEvent(address value);
+    
     constructor (address _worthDVCFundWallet) {
+        require(_worthDVCFundWallet != address(0),"Should not be address 0");
         _balances[_msgSender()] = TOTAL_SUPPLY;
         
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
@@ -299,8 +308,8 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     /* Function     : Returns Decimal of token */
     /* Parameter    : -- */
     /* Public Pure function */
-    function decimal() public pure returns (uint8) {
-        return DECIMAL;
+    function decimals() public pure returns (uint8) {
+        return DECIMALS;
     }
 
     /* Function     : Returns total supply of token */
@@ -316,13 +325,6 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
-    
-    /* Function     : Function to check the value of Min Auto Liquidity Sell Amount */
-    /* Parameters   : -- */
-    /* Public View Function */
-    function getMinAutoLiquidityAmount() public view returns (uint 256) {
-        return numTokensSellToAddToLiquidity;
-    }
 
     /**
      * @dev Moves `amount` tokens from the caller's account to `recipient`.
@@ -331,7 +333,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) public override returns (bool) {
+    function transfer(address recipient, uint256 amount) public override nonReentrant returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -375,7 +377,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public override nonReentrant returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -399,25 +401,8 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         return true;
     }
 
-    /* To recieve BNB from uniswapV2Router when swaping */
+    /* To receive BNB from uniswapV2Router when swapping */
     receive() external payable {}
-
-    /* Internal function to remove all fees in transfer */
-    function removeAllFee() private {
-        if(_liquidityFee == 0 && _worthDVCFundFee==0) return;
-        
-        _previousLiquidityFee = _liquidityFee;
-        _previousWorthDVCFundFee = _worthDVCFundFee;
-        
-        _liquidityFee = 0;
-        _worthDVCFundFee = 0;
-    }
-    
-    /* Internal function to restore all fees in transfer */
-    function restoreAllFee() private {
-       _liquidityFee = _previousLiquidityFee;
-       _worthDVCFundFee = _previousWorthDVCFundFee;
-    }
     
     /* Function     : Checks if a address is excluded from fee or not */
     /* Parameters   : Address of the wallet/contract */
@@ -467,7 +452,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
             swapAndLiquify(contractTokenBalance);
         }
         
-        /* Transfer amount, it will take tax, burn, liquidity fee */
+        /* Transfer amount, it will take Worth DVC Fund Fee and Liquidity Fee */
         _tokenTransfer(from,to,amount);
     }
 
@@ -534,35 +519,31 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
 
     /* Internal Basic function for Token Transfer */
     function _tokenTransfer(address sender, address recipient, uint256 amount) private {
-        if(_isExcludedFromFee[sender] || _isExcludedFromFee[recipient]){
-            removeAllFee();
-        }
+        
         require(sender != address(0), "BEP20: transfer from the zero address");
         require(recipient != address(0), "BEP20: transfer to the zero address");
         
         uint256 worthDVCFundFee = 0;
         uint256 liquidityAmount = 0;
-        
-        if(_worthDVCFundFee>0){
-            /* Calculate WorthDVCFund Fee */
-            worthDVCFundFee = amount.mul(_worthDVCFundFee).div(FEES_DIVISOR);
-        }
-        if(_liquidityFee>0){
-            /* Calculate Liquidity Fee */
-            liquidityAmount = amount.mul(_liquidityFee).div(FEES_DIVISOR);
-        }
          
         if (_isExcludedFromFee[sender]) {
             _transferStandard(sender, recipient, amount);
         } else {
+        
+            if(_worthDVCFundFee > 0) {
+                /* Calculate WorthDVCFund Fee */
+                worthDVCFundFee = amount.mul(_worthDVCFundFee).div(FEES_DIVISOR);
+            }
+        
+            if(_liquidityFee > 0) {
+                /* Calculate Liquidity Fee */
+                liquidityAmount = amount.mul(_liquidityFee).div(FEES_DIVISOR);
+            }
+            
             _transferStandard(sender, recipient, (amount.sub(worthDVCFundFee).sub(liquidityAmount)));
             _transferStandard(sender, worthDVCFundWallet, worthDVCFundFee);
             _transferStandard(sender, address(this), liquidityAmount);
         }
-         
-        /* Checks if address is excluded from fee and restores all fees */
-        if(_isExcludedFromFee[sender] || _isExcludedFromFee[recipient])
-            restoreAllFee();
     }
 
     /* Internal Standard Transfer function for Token */
@@ -576,15 +557,19 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     /* Function     : Exclude A wallet/contract in fee taking */
     /* Parameters   : Address of wallet/contract */
     /* Only Owner Function */
-    function excludeFromFee(address account) public onlyOwner {
+    function excludeFromFee(address account) external onlyOwner {
+        require(_isExcludedFromFee[account] == false, "Address is already excluded from Fee");
         _isExcludedFromFee[account] = true;
+        emit ExcludeFromFeeEvent(true);
     }
     
     /* Function     : Include A wallet/contract in fee taking */
     /* Parameters   : Address of wallet/contract */
     /* Only Owner Function */
-    function includeInFee(address account) public onlyOwner {
+    function includeInFee(address account) external onlyOwner {
+        require(_isExcludedFromFee[account] == true, "Address is already included in Fee");
         _isExcludedFromFee[account] = false;
+        emit IncludeInFeeEvent(true);
     }
     
     /* Function     : Disables the Liquidity and Worth DVC Fund fee  */
@@ -592,10 +577,10 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     /* Only Owner Function */
     function disableAllFees() external onlyOwner {
        
-        _liquidityFee = 0;
+        delete _liquidityFee;
         _previousLiquidityFee = _liquidityFee;
      
-        _worthDVCFundFee = 0;
+        delete _worthDVCFundFee;
         _previousWorthDVCFundFee = _worthDVCFundFee;
         inSwapAndLiquify = false;
         emit SwapAndLiquifyEnabledUpdated(false);
@@ -615,54 +600,67 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         emit SwapAndLiquifyEnabledUpdated(true);
     }
     
-    /* Function     : Set New Marketing wallet  */
-    /* Parameters   : New Marketing Wallet address */
+    /* Function     : Set New Worth DVC Fund wallet  */
+    /* Parameters   : New Worth DVC Fund Wallet address */
     /* Only Owner Function */
     function setWorthDVCFundWallet(address newWallet) external onlyOwner {
+        require(newWallet != address(0),"Should not be address 0");
+        require(newWallet != worthDVCFundWallet,"Should be a new Address");
         worthDVCFundWallet = newWallet;
+        emit SetWorthDVCFundWalletEvent(newWallet);
     }
 
     /* Function     : Set Liquidity fee percentage  */
     /* Parameters   : New Percentage to be executed */
     /* Only Owner Function */
     function setLiquidityFeePercent(uint256 liquidityFee) external onlyOwner {
+        require(liquidityFee >= 10 && liquidityFee <= 100, "Liquidity Fee can never be set below 1% or exceed 10%");
         _liquidityFee = liquidityFee;
+        emit SetLiquidityFeePercentEvent(liquidityFee);
     }
     
-    /* Function     : Set Marketing fee percentage  */
+    /* Function     : Set Worth DVC Fund fee percentage  */
     /* Parameters   : New Percentage to be executed */
     /* Only Owner Function */
     function setWorthDVCFundFeePercent(uint256 worthDVCFundFee) external onlyOwner {
+        require(worthDVCFundFee >= 10 && worthDVCFundFee <= 100, "Worth DVC Fund Fee can never be set below 1% or exceed 10%");        
         _worthDVCFundFee = worthDVCFundFee;
+        emit SetWorthDVCFundFeePercentEvent(worthDVCFundFee);
     }
 
-    /* Function     : Set Minimum amount for swapping to Liquify for Liquidity and Marketing */
+    /* Function     : Set Minimum amount for swapping to Liquify for Liquidity Addition */
     /* Parameters   : Enter the  Minimum Token to swap */
     /* Only Owner Function */
     function setMinSell(uint256 amount) external onlyOwner {
-        numTokensSellToAddToLiquidity = amount * DECIMALS;
+        require(amount > 0 && amount < _maxTxAmount, "Minimum Sell Amount should be greater than 0 and less than max transaction amount");
+        numTokensSellToAddToLiquidity = amount * 10**DECIMALS;
+        emit SetMinSellEvent(amount);
     }
 
     /* Function     : Set Max transaction amount for each transfer  */
     /* Parameters   : Max Amount of token to be swapped */
     /* Only Owner Function */
     function setMaxTxAmount(uint256 maxTxAmount) external onlyOwner {
-        _maxTxAmount = maxTxAmount * DECIMALS;
+        require(maxTxAmount > 0 && maxTxAmount < (TOTAL_SUPPLY/FEES_DIVISOR), "Max Transaction Amount should be greater than 0 and less than 0.1% of the total supply");
+        _maxTxAmount = maxTxAmount * 10**DECIMALS;
+        emit SetMaxTxAmountEvent(maxTxAmount);
     }
 
     /* Function     : Set a new router if released  */
     /* Parameters   : New router Address */
     /* Only Owner Function */
-    function setRouterAddress(address newRouter) public onlyOwner {
+    function setRouterAddress(address newRouter) external onlyOwner {
+        require(newRouter != address(0),"Should not be address 0");
         IUniswapV2Router02 _newPancakeRouter = IUniswapV2Router02(newRouter);
         uniswapV2Pair = IUniswapV2Factory(_newPancakeRouter.factory()).createPair(address(this), _newPancakeRouter.WETH());
         uniswapV2Router = _newPancakeRouter;
+        emit SetRouterAddressEvent(newRouter);
     }
     
     /* Function     : Turns ON/OFF Liquidity swap */
     /* Parameters   : Set 'true' to turn ON and 'false' to turn OFF */
     /* Only Owner Function */
-    function setSwapAndLiquifyEnabled(bool _enabled) public onlyOwner {
+    function setSwapAndLiquifyEnabled(bool _enabled) external onlyOwner {
         swapAndLiquifyEnabled = _enabled;
         emit SwapAndLiquifyEnabledUpdated(_enabled);
     }
