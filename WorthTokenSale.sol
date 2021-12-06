@@ -30,8 +30,6 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     uint256 public minContribution;
     uint256 public maxContribution;
     uint256 public hardCap;
-    uint256 public startDate;
-    uint256 public endDate;
 
     //Keep track of whether contract is up or not
     bool public contractUp;
@@ -83,23 +81,18 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
 
     /* Constructor Arguments : */
     /* 1. WorthToken token contract Address */
-    /* 2. Start date (in UNIX Timestamp) */
-    /* 3. End date (in UNIX Timestamp) */
-    /* 4. Min Contribution (in USD) */
-    /* 5. Max Contribution (in USD) */
-    /* 6. Hard Cap (in USD) */
-    /* 7. Claim Date (in UNIX Timestamp) */
-    /* 8. USDT token address */
-    /* 9. BUSD token address */
-    /* 10. Token ICO Price (in USD) */
-    constructor(address _tokenAddr, uint256 _startDate, 
-                uint256 _endDate,uint256 _minContribution,
+    /* 2. Min Contribution (in USD) */
+    /* 3. Max Contribution (in USD) */
+    /* 4. Hard Cap (in USD) */
+    /* 5. Claim Date (in UNIX Timestamp) */
+    /* 6. USDT token address */
+    /* 7. BUSD token address */
+    /* 8. Token ICO Price (in USD) */
+    constructor(address _tokenAddr, uint256 _minContribution,
                 uint256 _maxContribution,uint256 _hardCap,
                 uint256 _claimDate, address _usdtAddr,
                 address _busdAddr, uint256 _tokenPriceUsd) nonZeroAddress(_tokenAddr) nonZeroAddress(_usdtAddr) nonZeroAddress(_busdAddr){
         tokenAddr = _tokenAddr;
-        startDate = _startDate;
-        endDate = _endDate;
         minContribution = _minContribution.mul(10 ** uint256(tokenDecimal));
         maxContribution = _maxContribution.mul(10 ** uint256(tokenDecimal));
         hardCap = _hardCap.mul(10 ** uint256(tokenDecimal));
