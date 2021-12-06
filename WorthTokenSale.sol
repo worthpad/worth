@@ -23,15 +23,15 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     address public usdtAddr;
     address public busdAddr;
     
-    uint256 public tokenPriceUsd = 35000000000000; 
+    uint256 public tokenPriceUsd; 
     uint256 public tokenDecimal = 18;
     uint256 public totalTransaction;
     uint256 public totalHardCap;
     uint256 public minContribution;
     uint256 public maxContribution;
     uint256 public hardCap;
-    uint256 public startAt;
-    uint256 public endAt;
+    uint256 public startDate;
+    uint256 public endDate;
 
     //Keep track of whether contract is up or not
     bool public contractUp;
@@ -42,10 +42,16 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     //Event to trigger Sale stop
     event SaleStopped(address _owner, uint256 time);
 
-    event TokenTransfer(address beneficiary, uint amount);
-    event amountTransfered(address indexed fromAddress,address contractAddress,address indexed toAddress, uint256 indexed amount);
-    event TokenDeposited(address indexed beneficiary, uint amount);
-    event UsdDeposited(address indexed beneficiary, uint amount);
+    event TokensTransferred(address beneficiary, uint256 amount);
+    event TokensDeposited(address indexed beneficiary, uint256 amount);
+    event UsdDeposited(address indexed beneficiary, uint256 amount);
+    event HardCapUpdated(uint256 value);
+    event TokenPriceUpdated(uint256 value);
+    event MinMaxUpdated(uint256 min, uint256 max);
+    event TokenAddressUpdated(address value);
+    event TokenWithdrawn(address beneficiary,uint256 value);
+    event CryptoWithdrawn(address beneficiary,uint256 value);
+    event SaleEnded(address _owner, uint256 time);
     
     mapping(address => uint256) public balances;
     mapping(address => bool) public whitelisted;
@@ -56,22 +62,22 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
 
     //modifiers    
     modifier _contractUp(){
-        require(contractUp);
+        require(contractUp,"Token Sale hasn't started");
         _;
     }
   
      modifier nonZeroAddress(address _to) {
-        require(_to != address(0));
+        require(_to != address(0),"Token Address should not be address 0");
         _;
     }
     
     modifier _saleEnded() {
-        require(saleEnded);
+        require(saleEnded, "Token Sale hasn't ended yet");
         _;
     }
     
     modifier _saleNotEnded() {
-        require(!saleEnded);
+        require(!saleEnded, "Token Sale has ended");
         _;
     }
 
@@ -79,35 +85,35 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* 1. WorthToken token contract Address */
     /* 2. Start date (in UNIX Timestamp) */
     /* 3. End date (in UNIX Timestamp) */
-    /* 4. Min Contribution (in WEI) */
-    /* 5. Max Contribution (in WEI) */
-    /* 6. Hard Cap (in WEI) */
+    /* 4. Min Contribution (in USD) */
+    /* 5. Max Contribution (in USD) */
+    /* 6. Hard Cap (in USD) */
     /* 7. Claim Date (in UNIX Timestamp) */
     /* 8. USDT token address */
     /* 9. BUSD token address */
-    /* 10. Token ICO Price (in WEI) USD */
+    /* 10. Token ICO Price (in USD) */
     constructor(address _tokenAddr, uint256 _startDate, 
                 uint256 _endDate,uint256 _minContribution,
                 uint256 _maxContribution,uint256 _hardCap,
                 uint256 _claimDate, address _usdtAddr,
-                address _busdAddr, uint256 _tokenPriceUsd) nonZeroAddress(_tokenAddr) {
+                address _busdAddr, uint256 _tokenPriceUsd) nonZeroAddress(_tokenAddr) nonZeroAddress(_usdtAddr) nonZeroAddress(_busdAddr){
         tokenAddr = _tokenAddr;
-        startAt = _startDate;
-        endAt = _endDate;
-        minContribution =_minContribution;
-        maxContribution = _maxContribution;
-        hardCap =_hardCap;
+        startDate = _startDate;
+        endDate = _endDate;
+        minContribution = _minContribution.mul(10 ** uint256(tokenDecimal));
+        maxContribution = _maxContribution.mul(10 ** uint256(tokenDecimal));
+        hardCap = _hardCap.mul(10 ** uint256(tokenDecimal));
         claimDate = _claimDate;
         usdtAddr = _usdtAddr;
         busdAddr = _busdAddr;
-        tokenPriceUsd = _tokenPriceUsd;
+        tokenPriceUsd = _tokenPriceUsd.mul(10 ** uint256(tokenDecimal));
     }
 
     /* Function     : This function is used to Whitelist address for Sale */
     /* Parameters   : Array Address of all users */
-    /* Public Function */
-    function whitelistAddress(address[] memory _recipients) public onlyOwner _contractUp() _saleNotEnded() returns (bool) {
-        for (uint i = 0; i < _recipients.length; i++) {
+    /* External Function */
+    function whitelistAddress(address[] memory _recipients) external onlyOwner _contractUp() _saleNotEnded() returns (bool) {
+        for (uint256 i = 0; i < _recipients.length; i++) {
             whitelisted[_recipients[i]] = true;
         }
         return true;
@@ -115,37 +121,37 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     
     /* Function     : This function is used to deposit tokens for liquidity manually */
     /* Parameters   : Total amount needed to be added as liquidity */
-    /* Public Function */    
-    function depositTokens(uint256  _amount) public returns (bool) {
+    /* External Function */    
+    function depositTokens(uint256  _amount) external returns (bool) {
         require(_amount <= Token(tokenAddr).balanceOf(msg.sender),"Token Balance of user is less");
         require(Token(tokenAddr).transferFrom(msg.sender,address(this), _amount));
-        emit TokenDeposited(msg.sender, _amount);
+        emit TokensDeposited(msg.sender, _amount);
         return true;
     }
 
     /* Function     : This function is used to claim token brought */
     /* Parameters   : -- */
-    /* Public Function */
-    function claimToken() public nonReentrant _saleEnded() returns (bool) {
+    /* External Function */
+    function claimToken() external nonReentrant _saleEnded() returns (bool) {
         address userAdd = msg.sender;
         uint256 amountToClaim = tokenExchanged[userAdd];
         require(block.timestamp>claimDate,"Cannot Claim Now");
         require(amountToClaim>0,"There is no amount to claim");
         require(amountToClaim <= Token(tokenAddr).balanceOf(address(this)),"Token Balance of contract is less");
-        Token(tokenAddr).transfer(userAdd, amountToClaim);
-        emit TokenTransfer(userAdd, amountToClaim);
         tokenExchanged[userAdd] = 0;
+        require(Token(tokenAddr).transfer(userAdd, amountToClaim),"Transfer Failed");
+        emit TokensTransferred(userAdd, amountToClaim);
         return true;
     }
     
-    /* This function will accept BUSD/USDT directly sent to the address */
+    /* This function will accept funds directly sent to the address */
     receive() payable external {
     }
 
-    /* Function     : This function is used to buy token using USDT */
-    /* Parameters   : Total token to buy (in WEI) */
-    /* Public Function */
-    function ExchangeUSDTforToken(uint256 _amount) public nonReentrant _contractUp _saleNotEnded {
+    /* Function     : This function is used to buy WORTH tokens using USDT */
+    /* Parameters   : Total amount of WORTH token to buy */
+    /* External Function */
+    function exchangeUSDTForToken(uint256 _amount) external nonReentrant _contractUp() _saleNotEnded() {
         require(Token(usdtAddr).transferFrom(msg.sender,address(this), _amount));
         uint256 amount = _amount;
         address userAdd = msg.sender;
@@ -159,16 +165,16 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
         require(balances[msg.sender] >= minContribution && balances[msg.sender] <= maxContribution,"Contribution should satisfy min max case");
         totalTransaction = totalTransaction.add(1);
         totalHardCap = totalHardCap.add(amount);
-        tokenAmount = ((amount.mul(10 ** uint256(tokenDecimal)).div(tokenPriceUsd)).mul(10 ** uint256(tokenDecimal))).div(10 ** uint256(tokenDecimal));
+        tokenAmount = amount.mul(10 ** uint256(tokenDecimal)).div(tokenPriceUsd);
         tokenExchanged[userAdd] += tokenAmount;
         
         emit UsdDeposited(msg.sender,_amount);
     }
 
-    /* Function     : This function is used to buy token using BUSD */
-    /* Parameters   : Total token to buy (in WEI) */
-    /* Public Function */
-    function ExchangeBUSDforToken(uint256 _amount) public nonReentrant _contractUp _saleNotEnded {
+    /* Function     : This function is used to buy WORTH tokens using BUSD */
+    /* Parameters   : Total amount of WORTH token to buy */
+    /* External Function */
+    function exchangeBUSDForToken(uint256 _amount) external nonReentrant _contractUp() _saleNotEnded() {
         require(Token(busdAddr).transferFrom(msg.sender,address(this), _amount));
         uint256 amount = _amount;
         address userAdd = msg.sender;
@@ -182,7 +188,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
         require(balances[msg.sender] >= minContribution && balances[msg.sender] <= maxContribution,"Contribution should satisfy min max case");
         totalTransaction = totalTransaction.add(1);
         totalHardCap = totalHardCap.add(amount);
-        tokenAmount = ((amount.mul(10 ** uint256(tokenDecimal)).div(tokenPriceUsd)).mul(10 ** uint256(tokenDecimal))).div(10 ** uint256(tokenDecimal));
+        tokenAmount = amount.mul(10 ** uint256(tokenDecimal)).div(tokenPriceUsd);
         tokenExchanged[userAdd] += tokenAmount;
         
         emit UsdDeposited(msg.sender,_amount);
@@ -202,91 +208,89 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     }
 
     //for Emergency/Hard stop of the sale
-    function emergencyStop() external onlyOwner _contractUp _saleNotEnded {
+    function emergencyStop() external onlyOwner _contractUp() _saleNotEnded() {
         saleEnded = true;    
         emit SaleStopped(msg.sender, block.timestamp);
+    }
+    
+    /**
+    *     @dev End the Sale
+    */
+    function endSale() external onlyOwner _contractUp() _saleNotEnded() {
+        //End the sale process
+        saleEnded = true;
+        emit SaleEnded(msg.sender, block.timestamp);
     }
 
     /* Function     : Updates Whitelisting feature ON/OFF */
     /* Parameters   : -- */
     /* Only Owner Function */
-    function toggleWhitelistStatus() public onlyOwner returns (bool success)  {
+    function toggleWhitelistStatus() external onlyOwner returns (bool success)  {
         if (whitelist) {
             whitelist = false;
         } else {
             whitelist = true;
         }
-        return true;     
+        return whitelist;     
     }
 
-    /* Function     : Update new Token Price */
-    /* Parameters   : New token price */
+    /* Function     : Update Token Price */
+    /* Parameters   : New token Price (in USD) */
     /* Only Owner Function */    
-    function updateTokenPrice(uint256 newTokenValue) public onlyOwner {
-        tokenPriceUsd = newTokenValue;
+    function updateTokenPrice(uint256 newTokenValue) external onlyOwner {
+        require(!contractUp, "Changes are not allowed during Token Sale");
+        tokenPriceUsd = newTokenValue.mul(10 ** uint256(tokenDecimal));
+        emit TokenPriceUpdated(newTokenValue);
     }
 
-    /* Function     : Update Hard cap of sale (in WEI) */
-    /* Parameters   : New Hard cap */
+    /* Function     : Update Hard cap of sale (in USD) */
+    /* Parameters   : New Hard cap (in USD) */
     /* Only Owner Function */
-    function updateHardCap(uint256 newHardcapValue) public onlyOwner {
-        hardCap = newHardcapValue;
+    function updateHardCap(uint256 newHardcapValue) external onlyOwner {
+        require(!contractUp, "Changes are not allowed during Token Sale");
+        hardCap = newHardcapValue.mul(10 ** uint256(tokenDecimal));
+        emit HardCapUpdated(newHardcapValue);
     }
 
-    /* Function     : Update Min Max tokens to buy (in WEI) */
+    /* Function     : Update Min Max Buy Limits (in USD) */
     /* Parameters 1 : Min Token */
     /* Parameters 2 : Max Token */
     /* Only Owner Function */
-    function updateTokenContribution(uint256 min, uint256 max) public onlyOwner {
-        minContribution = min;
-        maxContribution = max;
-    }
-
-    /* Function     : Update USDT and BUSD tokens address */
-    /* Parameters 1 : Update USDT Address */
-    /* Parameters 2 : Update BUSD Address */
-    /* Only Owner Function */
-    function updateUSDTBUSDaddress(address usdt, address busd) public onlyOwner {
-        usdtAddr = usdt;
-        busdAddr = busd;
+    function updateTokenContribution(uint256 min, uint256 max) external onlyOwner {
+        require(!contractUp, "Changes are not allowed during Token Sale");
+        minContribution = min.mul(10 ** uint256(tokenDecimal));
+        maxContribution = max.mul(10 ** uint256(tokenDecimal));
+        emit MinMaxUpdated(min,max);
     }
     
-    /* Function     : Update Token decimals */
-    /* Parameters   : New token decimals */
-    /* Only Owner Function */
-    function updateTokenDecimal(uint256 newDecimal) public onlyOwner {
-        tokenDecimal = newDecimal;
-    }
-
     /* Function     : Updates the token address */
     /* Parameters   : New Token Address */
     /* Only Owner Function */
-    function updateTokenAddress(address newTokenAddr) public onlyOwner {
+    function updateTokenAddress(address newTokenAddr) external nonZeroAddress(newTokenAddr) onlyOwner {
+        require(!contractUp, "Changes are not allowed during Token Sale");
         tokenAddr = newTokenAddr;
+        emit TokenAddressUpdated(newTokenAddr);
     }
 
     /* Function     : Withdraw Tokens remaining after the sale */
     /* Parameters 1 : Address where token should be sent */
     /* Parameters 2 : Token Address */
     /* Only Owner Function */
-    function withdrawTokens(address beneficiary,address _tokenAddr) public onlyOwner {
+    function withdrawTokens(address beneficiary, address _tokenAddr) external nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
         require(Token(_tokenAddr).transfer(beneficiary, Token(_tokenAddr).balanceOf(address(this))));
+        emit TokenWithdrawn(_tokenAddr, Token(_tokenAddr).balanceOf(address(this)));
     }
 
-    /* Function     : Withdraws BNB after sale */
-    /* Parameters   : Address where BNB should be sent */
+    /* Function     : Withdraws BUSD & USDT after sale */
+    /* Parameters   : Address where BUSD & USDT should be sent */
     /* Only Owner Function */
-    function withdrawCrypto(address payable beneficiary) public onlyOwner {
-        beneficiary.transfer(address(this).balance);
+    function withdrawCrypto(address payable beneficiary) external nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
+        require(address(this).balance>0,"No Cypto inside contract");
+        (bool success, ) = beneficiary.call{value:address(this).balance}("");
+        require(success, "Transfer failed.");
+        emit CryptoWithdrawn(beneficiary, address(this).balance);
     }
     
-    /* Function     : Changes the Claim date for ICO */
-    /* Parameters   : Claim date in UNIX Timestamp */
-    /* Only Owner Function */
-    function changeClaimDate(uint256 _claimDate) public onlyOwner {
-        claimDate = _claimDate;
-    }
-
     /* ONLY OWNER FUNCTION ENDS HERE */
 
     /* VIEW FUNCTIONS */
