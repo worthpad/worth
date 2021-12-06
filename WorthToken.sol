@@ -325,6 +325,13 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
+    
+    /* Function     : Function to check the value of Min Auto Liquidity Sell Amount */
+    /* Parameters   : -- */
+    /* Public View Function */
+    function getMinAutoLiquidityAmount() public view returns (uint256) {
+        return numTokensSellToAddToLiquidity;
+    }
 
     /**
      * @dev Moves `amount` tokens from the caller's account to `recipient`.
