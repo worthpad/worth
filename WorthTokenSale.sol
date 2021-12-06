@@ -53,6 +53,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     
     mapping(address => uint256) public balances;
     mapping(address => bool) public whitelisted;
+    mapping(address => uint256) public allocation;
     mapping(address => uint256) public tokenExchanged;
 
     bool public whitelist = true;
@@ -105,9 +106,11 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Function     : This function is used to Whitelist address for Sale */
     /* Parameters   : Array Address of all users */
     /* External Function */
-    function whitelistAddress(address[] memory _recipients) external onlyOwner _contractUp() _saleNotEnded() returns (bool) {
+    function whitelistAddress(address[] memory _recipients, uint256[] memory _allocation) external onlyOwner returns (bool) {
+        require(!contractUp, "Changes are not allowed during Token Sale");
         for (uint256 i = 0; i < _recipients.length; i++) {
             whitelisted[_recipients[i]] = true;
+            allocation[_recipients[i]] = _allocation[i];
         }
         return true;
     } 
@@ -153,6 +156,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
         
         if(whitelist){
             require(whitelisted[userAdd],"User is not Whitelisted");
+            require(balances[msg.sender]<=allocation[msg.sender],"User max allocation limit reached");
         }
         require(totalHardCap < hardCap, "USD Hardcap Reached");
         require(balances[msg.sender] >= minContribution && balances[msg.sender] <= maxContribution,"Contribution should satisfy min max case");
@@ -176,6 +180,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
         
         if(whitelist){
             require(whitelisted[userAdd],"User is not Whitelisted");
+            require(balances[msg.sender]<=allocation[msg.sender],"User max allocation limit reached");
         }
         require(totalHardCap < hardCap, "USD Hardcap Reached");
         require(balances[msg.sender] >= minContribution && balances[msg.sender] <= maxContribution,"Contribution should satisfy min max case");
@@ -219,6 +224,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters   : -- */
     /* Only Owner Function */
     function toggleWhitelistStatus() external onlyOwner returns (bool success)  {
+        require(!contractUp, "Changes are not allowed during Token Sale");
         if (whitelist) {
             whitelist = false;
         } else {
