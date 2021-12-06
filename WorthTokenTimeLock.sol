@@ -9,10 +9,7 @@ pragma solidity 0.8.10;
 */
 interface Token {
     function balanceOf(address who) external view returns (uint256);
-    function allowance(address owner, address spender) external view returns (uint256);
     function transfer(address to, uint256 value) external returns (bool);
-    function approve(address spender, uint256 value) external returns (bool);
-    function approveAndCall(address spender, uint tokens, bytes memory data) external returns (bool success);
     function transferFrom(address from, address to, uint256 value) external returns (bool);
 }
 
@@ -37,17 +34,17 @@ contract WorthTokenTimeLock is Ownable{
     mapping (uint256 => Items) public lockedToken;
     mapping (address => mapping(address => uint256)) public walletTokenBalance;
     
-    event LogWithdrawal(address SentToAddress, uint256 AmountTransferred);
+    event LogWithdrawal(address sentToAddress, uint256 amountTransferred);
     
     /* Function     : This function will Lock the token */
     /* Parameters 1 : Token address */
     /* Parameters 2 : Withdrawal address */
     /* Parameters 1 : Amount to Lock */
     /* Parameters 2 : Unlock time - UNIX Timestamp */
-    /* Public View Function */
-    function lockTokens (address _tokenAddress, address _withdrawalAddress, uint256 _amount, uint256 _unlockTime) public returns (uint256 _id) {
-        require(_amount > 0);
-        require(_unlockTime < 10000000000);
+    /* External Function */
+    function lockTokens(address _tokenAddress, address _withdrawalAddress, uint256 _amount, uint256 _unlockTime) external returns (uint256 _id) {
+        require(_amount > 0, "Amount should be greater than 0");
+        require(_unlockTime <= 3217825449, "Enter a valid unlock time");
         
         //update balance in address
         walletTokenBalance[_tokenAddress][_withdrawalAddress] = walletTokenBalance[_tokenAddress][_withdrawalAddress].add(_amount);
@@ -63,7 +60,7 @@ contract WorthTokenTimeLock is Ownable{
         depositsByWithdrawalAddress[_withdrawalAddress].push(_id);
         
         // transfer tokens into contract
-        require(Token(_tokenAddress).transferFrom(msg.sender, address(this), _amount));
+        require(Token(_tokenAddress).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
     }
     
     /* Function     : This function will Create Multiple Lock at the same time */
@@ -72,15 +69,15 @@ contract WorthTokenTimeLock is Ownable{
     /* Parameters 2 : Withdrawal address */
     /* Parameters 1 : Amount to Lock */
     /* Parameters 2 : Unlock time - UNIX Timestamp */
-    /* Public View Function */
-    function createMultipleLocks (address _tokenAddress, address _withdrawalAddress, uint256[] memory _amounts, uint256[] memory _unlockTimes) public returns (uint256 _id) {
-        require(_amounts.length > 0);
-        require(_amounts.length == _unlockTimes.length);
+    /* External Function */
+    function createMultipleLocks(address _tokenAddress, address _withdrawalAddress, uint256[] memory _amounts, uint256[] memory _unlockTimes) external returns (uint256 _id) {
+        require(_amounts.length > 0, "Enter at least 1 value");
+        require(_amounts.length == _unlockTimes.length, "Number of amounts and number of unlock times should be equal");
         
         uint256 i;
         for(i=0; i<_amounts.length; i++){
-            require(_amounts[i] > 0);
-            require(_unlockTimes[i] < 10000000000);
+            require(_amounts[i] > 0, "Amount should be greater than 0");     
+            require(_unlockTimes[i] <= 3217825449, "Enter valid unlock time");
             
             //update balance in address
             walletTokenBalance[_tokenAddress][_withdrawalAddress] = walletTokenBalance[_tokenAddress][_withdrawalAddress].add(_amounts[i]);
@@ -96,7 +93,7 @@ contract WorthTokenTimeLock is Ownable{
             depositsByWithdrawalAddress[_withdrawalAddress].push(_id);
             
             //transfer tokens into contract
-            require(Token(_tokenAddress).transferFrom(msg.sender, address(this), _amounts[i]));
+            require(Token(_tokenAddress).transferFrom(msg.sender, address(this), _amounts[i]), "Transfer Failed");
         }
     }
     
@@ -104,10 +101,11 @@ contract WorthTokenTimeLock is Ownable{
     /* Parameters 1 : Lock ID */
     /* Parameters 2 : Unlock Time - in UNIX Timestamp */
     /* Public Function */
-    function extendLockDuration (uint256 _id, uint256 _unlockTime) public {
-        require(_unlockTime < 10000000000);
-        require(!lockedToken[_id].withdrawn);
-        require(msg.sender == lockedToken[_id].withdrawalAddress);
+    function extendLockDuration(uint256 _id, uint256 _unlockTime) external {
+        require(_unlockTime <= 3217825449, "Enter a valid unlock time");
+        require(!lockedToken[_id].withdrawn, "Tokens already withdrawn");
+        require(msg.sender == lockedToken[_id].withdrawalAddress,"Not the same withdrawal address");
+        require(_unlockTime >= lockedToken[_id].unlockTime,"Cannot have time duration less than the previous one");
         
         //set new unlock time
         lockedToken[_id].unlockTime = _unlockTime;
@@ -115,11 +113,11 @@ contract WorthTokenTimeLock is Ownable{
     
     /* Function     : This function will transfer the lock to another wallet address */
     /* Parameters 1 : Lock ID */
-    /* Parameters 2 : New Recievers wallet Address */
+    /* Parameters 2 : New Receivers wallet Address */
     /* Public Function */
-    function transferLocks (uint256 _id, address _receiverAddress) public {
-        require(!lockedToken[_id].withdrawn);
-        require(msg.sender == lockedToken[_id].withdrawalAddress);
+    function transferLocks(uint256 _id, address _receiverAddress) external {
+        require(!lockedToken[_id].withdrawn, "Tokens already withdrawn");
+        require(msg.sender == lockedToken[_id].withdrawalAddress, "Not the same withdrawal address");
         
         //decrease sender's token balance
         walletTokenBalance[lockedToken[_id].tokenAddress][msg.sender] = walletTokenBalance[lockedToken[_id].tokenAddress][msg.sender].sub(lockedToken[_id].tokenAmount);
@@ -146,10 +144,10 @@ contract WorthTokenTimeLock is Ownable{
     /* Function     : This function will withdraw the tokens once lock time is reached */
     /* Parameters   : Lock ID */
     /* Public Function */
-    function withdrawTokens (uint256 _id) public {
-        require(block.timestamp >= lockedToken[_id].unlockTime);
-        require(msg.sender == lockedToken[_id].withdrawalAddress);
-        require(!lockedToken[_id].withdrawn);
+    function withdrawTokens(uint256 _id) external {
+        require(block.timestamp >= lockedToken[_id].unlockTime, "Unlock time not reached");
+        require(msg.sender == lockedToken[_id].withdrawalAddress, "Not the same withdrawal address");
+        require(!lockedToken[_id].withdrawn, "Tokens already withdrawn");
         
         lockedToken[_id].withdrawn = true;
         
@@ -168,14 +166,14 @@ contract WorthTokenTimeLock is Ownable{
         }
         
         // transfer tokens to wallet address
-        require(Token(lockedToken[_id].tokenAddress).transfer(msg.sender, lockedToken[_id].tokenAmount));
+        require(Token(lockedToken[_id].tokenAddress).transfer(msg.sender, lockedToken[_id].tokenAmount), "Transfer Failed");
         emit LogWithdrawal(msg.sender, lockedToken[_id].tokenAmount);
     }
 
     /* Function     : This function will total balance of token inside contract */
     /* Parameters   : Token address */
     /* Public View Function */
-    function getTotalTokenBalance (address _tokenAddress) view public returns (uint256)
+    function getTotalTokenBalance(address _tokenAddress) view public returns (uint256)
     {
        return Token(_tokenAddress).balanceOf(address(this));
     }
@@ -184,7 +182,7 @@ contract WorthTokenTimeLock is Ownable{
     /* Parameters 1 : Token address */
     /* Parameters 2 : Withdrawal address */
     /* Public View Function */
-    function getTokenBalanceByAddress (address _tokenAddress, address _walletAddress) view public returns (uint256)
+    function getTokenBalanceByAddress(address _tokenAddress, address _walletAddress) view public returns (uint256)
     {
        return walletTokenBalance[_tokenAddress][_walletAddress];
     }
@@ -200,7 +198,7 @@ contract WorthTokenTimeLock is Ownable{
     /* Function     : This function will return Lock details */
     /* Parameters   : ID of the Lock */
     /* Public View Function */
-    function getDepositDetails (uint256 _id) view public returns (address _tokenAddress, address _withdrawalAddress, uint256 _tokenAmount, uint256 _unlockTime, bool _withdrawn)
+    function getDepositDetails(uint256 _id) view public returns (address _tokenAddress, address _withdrawalAddress, uint256 _tokenAmount, uint256 _unlockTime, bool _withdrawn)
     {
         return(lockedToken[_id].tokenAddress,lockedToken[_id].withdrawalAddress,lockedToken[_id].tokenAmount,
         lockedToken[_id].unlockTime,lockedToken[_id].withdrawn);
@@ -209,7 +207,7 @@ contract WorthTokenTimeLock is Ownable{
     /* Function     : This function will return Lock details */
     /* Parameters   : Withdrawal address */
     /* Public View Function */
-    function getDepositsByWithdrawalAddress (address _withdrawalAddress) view public returns (uint256[] memory)
+    function getDepositsByWithdrawalAddress(address _withdrawalAddress) view public returns (uint256[] memory)
     {
         return depositsByWithdrawalAddress[_withdrawalAddress];
     }
