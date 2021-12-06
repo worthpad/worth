@@ -281,8 +281,8 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
         emit TokenWithdrawn(_tokenAddr, Token(_tokenAddr).balanceOf(address(this)));
     }
 
-    /* Function     : Withdraws BUSD & USDT after sale */
-    /* Parameters   : Address where BUSD & USDT should be sent */
+    /* Function     : Withdraws Funds after sale */
+    /* Parameters   : Address where Funds should be sent */
     /* Only Owner Function */
     function withdrawCrypto(address payable beneficiary) external nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
         require(address(this).balance>0,"No Cypto inside contract");
