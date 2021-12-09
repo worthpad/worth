@@ -111,36 +111,6 @@ contract WorthTokenTimeLock is Ownable{
         lockedToken[_id].unlockTime = _unlockTime;
     }
     
-    /* Function     : This function will transfer the lock to another wallet address */
-    /* Parameters 1 : Lock ID */
-    /* Parameters 2 : New Receivers wallet Address */
-    /* Public Function */
-    function transferLocks(uint256 _id, address _receiverAddress) external {
-        require(!lockedToken[_id].withdrawn, "Tokens already withdrawn");
-        require(msg.sender == lockedToken[_id].withdrawalAddress, "Not the same withdrawal address");
-        
-        //decrease sender's token balance
-        walletTokenBalance[lockedToken[_id].tokenAddress][msg.sender] = walletTokenBalance[lockedToken[_id].tokenAddress][msg.sender].sub(lockedToken[_id].tokenAmount);
-        
-        //increase receiver's token balance
-        walletTokenBalance[lockedToken[_id].tokenAddress][_receiverAddress] = walletTokenBalance[lockedToken[_id].tokenAddress][_receiverAddress].add(lockedToken[_id].tokenAmount);
-        
-        //remove this id from sender address
-        uint256 j;
-        uint256 arrLength = depositsByWithdrawalAddress[lockedToken[_id].withdrawalAddress].length;
-        for (j=0; j<arrLength; j++) {
-            if (depositsByWithdrawalAddress[lockedToken[_id].withdrawalAddress][j] == _id) {
-                depositsByWithdrawalAddress[lockedToken[_id].withdrawalAddress][j] = depositsByWithdrawalAddress[lockedToken[_id].withdrawalAddress][arrLength - 1];
-                depositsByWithdrawalAddress[lockedToken[_id].withdrawalAddress].pop();
-                break;
-            }
-        }
-        
-        //Assign this id to receiver address
-        lockedToken[_id].withdrawalAddress = _receiverAddress;
-        depositsByWithdrawalAddress[_receiverAddress].push(_id);
-    }
-    
     /* Function     : This function will withdraw the tokens once lock time is reached */
     /* Parameters   : Lock ID */
     /* Public Function */
