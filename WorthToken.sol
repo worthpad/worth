@@ -529,6 +529,8 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         
         require(sender != address(0), "BEP20: transfer from the zero address");
         require(recipient != address(0), "BEP20: transfer to the zero address");
+        require(amount > FEES_DIVISOR.div(_worthDVCFundFee), "Transaction amount is too small");
+        require(amount > FEES_DIVISOR.div(_liquidityFee), "Transaction amount is too small");
         
         uint256 worthDVCFundFee = 0;
         uint256 liquidityAmount = 0;
