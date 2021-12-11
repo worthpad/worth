@@ -284,7 +284,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters   : Address where Funds should be sent */
     /* Only Owner Function */
     function withdrawCrypto(address payable beneficiary) external nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
-        require(address(this).balance>0,"No Cypto inside contract");
+        require(address(this).balance>0,"No Crypto inside contract");
         (bool success, ) = beneficiary.call{value:address(this).balance}("");
         require(success, "Transfer failed.");
         emit CryptoWithdrawn(beneficiary, address(this).balance);
