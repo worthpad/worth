@@ -602,7 +602,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         delete _worthDVCFundFee;
         _previousWorthDVCFundFee = _worthDVCFundFee;
         inSwapAndLiquify = false;
-        emit SwapAndLiquifyEnabledUpdated(false);
+        emit SwapAndLiquifyEnabledUpdated(inSwapAndLiquify);
     }
 
     /* Function     : Enables The Liquidity and Worth DVC Fund fee  */
@@ -616,7 +616,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         _worthDVCFundFee = 25;
         _previousWorthDVCFundFee = _worthDVCFundFee;
         inSwapAndLiquify = true;
-        emit SwapAndLiquifyEnabledUpdated(true);
+        emit SwapAndLiquifyEnabledUpdated(inSwapAndLiquify);
     }
     
     /* Function     : Set New Worth DVC Fund wallet  */
@@ -681,7 +681,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     /* Only Owner Function */
     function setSwapAndLiquifyEnabled(bool _enabled) external onlyOwner {
         swapAndLiquifyEnabled = _enabled;
-        emit SwapAndLiquifyEnabledUpdated(_enabled);
+        emit SwapAndLiquifyEnabledUpdated(swapAndLiquifyEnabled);
     }
     
     /**
