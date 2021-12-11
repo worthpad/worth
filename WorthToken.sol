@@ -695,7 +695,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
      */
      /* Only Owner Function */
     function withdrawLockedBNB(address payable recipient) external onlyOwner {
-        require(recipient != address(0), "Cannot withdraw the ETH balance to the zero address");
+        require(recipient != address(0), "Cannot withdraw the BNB balance to the zero address");
         require(withdrawableBalance > 0, "The BNB balance must be greater than 0");
 
         // prevent re-entrancy attacks
