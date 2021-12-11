@@ -236,6 +236,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     uint256 public _worthDVCFundFee = 25;
     address public worthDVCFundWallet;
     uint256 private _previousWorthDVCFundFee = _worthDVCFundFee;
+    uint256 private withdrawableBalance;
 
     uint256 public _maxTxAmount = 10 * 10**6 * 10**DECIMALS;
 
@@ -522,6 +523,15 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
             owner(),
             block.timestamp
         );
+        
+        // fix the forever locked BNBs
+        /**
+         * The swapAndLiquify function converts half of the tokens to BNB. 
+         * For every swapAndLiquify function call, a small amount of BNB remains in the contract. 
+         * This amount grows over time with the swapAndLiquify function being called throughout the life 
+         * of the contract. 
+         */
+        withdrawableBalance = address(this).balance;
     }
 
     /* Internal Basic function for Token Transfer */
@@ -673,4 +683,25 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         swapAndLiquifyEnabled = _enabled;
         emit SwapAndLiquifyEnabledUpdated(_enabled);
     }
+    
+    /**
+     * @dev The owner can withdraw BNB collected in the contract from `swapAndLiquify`
+     * or if someone (accidentally) sends BNB directly to the contract.
+     *
+     * The swapAndLiquify function converts half of the tokens to BNB. 
+     * For every swapAndLiquify function call, a small amount of BNB remains in the contract. 
+     * This amount grows over time with the swapAndLiquify function being called 
+     * throughout the life of the contract. 
+     */
+     /* Only Owner Function */
+    function withdrawLockedBNB(address payable recipient) external onlyOwner {
+        require(recipient != address(0), "Cannot withdraw the ETH balance to the zero address");
+        require(withdrawableBalance > 0, "The BNB balance must be greater than 0");
+
+        // prevent re-entrancy attacks
+        uint256 amount = withdrawableBalance;
+        withdrawableBalance = 0;
+        recipient.transfer(amount);
+    }
+    
 }
