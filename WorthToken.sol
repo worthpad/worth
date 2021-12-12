@@ -270,6 +270,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     event SetMinSellEvent(uint256 value);
     event SetMaxTxAmountEvent(uint256 value);
     event SetRouterAddressEvent(address value);
+    event BNBWithdrawn(address beneficiary,uint256 value);
     
     constructor (address _worthDVCFundWallet) {
         require(_worthDVCFundWallet != address(0),"Should not be address 0");
@@ -701,7 +702,9 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
         // prevent re-entrancy attacks
         uint256 amount = withdrawableBalance;
         withdrawableBalance = 0;
-        recipient.transfer(amount);
+        (bool success, ) = recipient.call{value:amount}("");
+        require(success, "Transfer failed.");
+        emit BNBWithdrawn(recipient, amount);
     }
     
 }
