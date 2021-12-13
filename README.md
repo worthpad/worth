@@ -16,6 +16,10 @@ Funds accrued in the Worth DVC Fund will be used to fund exciting projects incub
 
 ![Worthpad Token Sale](https://user-images.githubusercontent.com/94482478/145877293-55daa1af-eb8c-4f23-98ad-72b57b7e9560.jpg)
 
+**How will Worthpad decentralize the management of its smart contracts?**
+
+To create a decentralized solution for the management of our smart contracts, our team is using the Gnosis Safe multisig. Control of the smart contracts will be transferred to the multisig wallets after deployment of the smart contracts. The Gnosis Safe requires 2 of 3 wallets to confirm every transaction in order to execute it. This prevents unauthorized access to company crypto. In future, this ownership will be transferred to the community through the Worth DAO.
+
 **WORTH Token Sale and security of investors’ funds**
 
 https://worthpad.medium.com/worth-token-sale-and-security-of-investors-funds-e8c42c946ef9
