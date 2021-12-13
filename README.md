@@ -16,6 +16,10 @@ Funds accrued in the Worth DVC Fund will be used to fund exciting projects incub
 
 ![Worthpad Token Sale](https://user-images.githubusercontent.com/94482478/145877293-55daa1af-eb8c-4f23-98ad-72b57b7e9560.jpg)
 
+**WORTH Token Sale and security of investors’ funds**
+
+https://worthpad.medium.com/worth-token-sale-and-security-of-investors-funds-e8c42c946ef9
+
 **Worth IDO Launchpad**
 
 ![Worth IDO Launchpad](https://user-images.githubusercontent.com/94482478/142051886-24abe573-25fb-467f-9ea3-2c5fb4b809e2.jpg)
