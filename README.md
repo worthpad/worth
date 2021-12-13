@@ -12,6 +12,10 @@ We have reduced the taxation from 10% (5% buy + 5% sell) to 5% (sell only) based
 
 Funds accrued in the Worth DVC Fund will be used to fund exciting projects incubated and accelerated by the Worth IDO Launchpad.
 
+**WORTH Token Sale**
+
+![Worthpad Token Sale](https://user-images.githubusercontent.com/94482478/145877293-55daa1af-eb8c-4f23-98ad-72b57b7e9560.jpg)
+
 **Worth IDO Launchpad**
 
 ![Worth IDO Launchpad](https://user-images.githubusercontent.com/94482478/142051886-24abe573-25fb-467f-9ea3-2c5fb4b809e2.jpg)
