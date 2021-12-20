@@ -1,3 +1,4 @@
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -6,18 +7,11 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-/* Token Interface */
-interface Token {
-    function transfer(address to, uint256 value) external returns (bool);
-    function transferFrom(address from, address to, uint256 value) external returns (bool);
-    function balanceOf(address who) external view returns (uint256);
-    function approve(address spender, uint256 value) external returns (bool);
-}
-
 /* WORTH Token Sale Contract */
 contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
 
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     address public tokenAddr;
     address public usdtAddr;
@@ -119,8 +113,8 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters   : Total amount needed to be added as liquidity */
     /* External Function */    
     function depositTokens(uint256  _amount) external returns (bool) {
-        require(_amount <= Token(tokenAddr).balanceOf(msg.sender),"Token Balance of user is less");
-        require(Token(tokenAddr).transferFrom(msg.sender,address(this), _amount));
+        require(_amount <= IERC20(tokenAddr).balanceOf(msg.sender),"Token Balance of user is less");
+        IERC20(tokenAddr).safeTransferFrom(msg.sender,address(this), _amount);
         emit TokensDeposited(msg.sender, _amount);
         return true;
     }
@@ -133,9 +127,9 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
         uint256 amountToClaim = tokenExchanged[userAdd];
         require(block.timestamp>claimDate,"Cannot Claim Now");
         require(amountToClaim>0,"There is no amount to claim");
-        require(amountToClaim <= Token(tokenAddr).balanceOf(address(this)),"Token Balance of contract is less");
+        require(amountToClaim <= IERC20(tokenAddr).balanceOf(address(this)),"Token Balance of contract is less");
         tokenExchanged[userAdd] = 0;
-        require(Token(tokenAddr).transfer(userAdd, amountToClaim),"Transfer Failed");
+        IERC20(tokenAddr).safeTransfer(userAdd, amountToClaim);
         emit TokensTransferred(userAdd, amountToClaim);
         return true;
     }
@@ -148,7 +142,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters   : Total amount of WORTH token to buy */
     /* External Function */
     function exchangeUSDTForToken(uint256 _amount) external nonReentrant _contractUp() _saleNotEnded() {
-        require(Token(usdtAddr).transferFrom(msg.sender,address(this), _amount));
+        IERC20(usdtAddr).safeTransferFrom(msg.sender,address(this), _amount);
         uint256 amount = _amount;
         address userAdd = msg.sender;
         uint256 tokenAmount = 0;
@@ -172,7 +166,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters   : Total amount of WORTH token to buy */
     /* External Function */
     function exchangeBUSDForToken(uint256 _amount) external nonReentrant _contractUp() _saleNotEnded() {
-        require(Token(busdAddr).transferFrom(msg.sender,address(this), _amount));
+        IERC20(busdAddr).safeTransferFrom(msg.sender,address(this), _amount);
         uint256 amount = _amount;
         address userAdd = msg.sender;
         uint256 tokenAmount = 0;
@@ -276,8 +270,8 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters 2 : Token Address */
     /* Only Owner Function */
     function withdrawTokens(address beneficiary, address _tokenAddr) external nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
-        require(Token(_tokenAddr).transfer(beneficiary, Token(_tokenAddr).balanceOf(address(this))));
-        emit TokenWithdrawn(_tokenAddr, Token(_tokenAddr).balanceOf(address(this)));
+        IERC20(_tokenAddr).safeTransfer(beneficiary, IERC20(_tokenAddr).balanceOf(address(this)));
+        emit TokenWithdrawn(_tokenAddr, IERC20(_tokenAddr).balanceOf(address(this)));
     }
 
     /* Function     : Withdraws Funds after sale */
@@ -298,7 +292,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters   : -- */
     /* Public View Function */
     function getTokenBalance(address _tokenAddr) public view nonZeroAddress(_tokenAddr) returns (uint256){
-        return Token(_tokenAddr).balanceOf(address(this));
+        return IERC20(_tokenAddr).balanceOf(address(this));
     }
 
     /* Function     : Returns Crypto Balance inside contract */
