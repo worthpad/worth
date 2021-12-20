@@ -1,21 +1,14 @@
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-/**
- * Token Contract call and send Functions
-*/
-interface Token {
-    function balanceOf(address who) external view returns (uint256);
-    function transfer(address to, uint256 value) external returns (bool);
-    function transferFrom(address from, address to, uint256 value) external returns (bool);
-}
-
 /* Lock Contract Starts here */
 contract WorthTokenTimeLock is Ownable{
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
     
     /*
      * deposit vars
@@ -58,7 +51,7 @@ contract WorthTokenTimeLock is Ownable{
         depositsByWithdrawalAddress[_withdrawalAddress].push(_id);
         
         // transfer tokens into contract
-        require(Token(_tokenAddress).transferFrom(msg.sender, address(this), _amount), "Transfer Failed");
+        IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _amount);
     }
     
     /* Function     : This function will Create Multiple Lock at the same time */
@@ -90,7 +83,7 @@ contract WorthTokenTimeLock is Ownable{
             depositsByWithdrawalAddress[_withdrawalAddress].push(_id);
             
             //transfer tokens into contract
-            require(Token(_tokenAddress).transferFrom(msg.sender, address(this), _amounts[i]), "Transfer Failed");
+            IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _amounts[i]);
         }
     }
     
@@ -133,7 +126,7 @@ contract WorthTokenTimeLock is Ownable{
         }
         
         // transfer tokens to wallet address
-        require(Token(lockedToken[_id].tokenAddress).transfer(msg.sender, lockedToken[_id].tokenAmount), "Transfer Failed");
+        IERC20(lockedToken[_id].tokenAddress).safeTransfer(msg.sender, lockedToken[_id].tokenAmount);
         emit LogWithdrawal(msg.sender, lockedToken[_id].tokenAmount);
     }
 
@@ -142,7 +135,7 @@ contract WorthTokenTimeLock is Ownable{
     /* Public View Function */
     function getTotalTokenBalance(address _tokenAddress) view public returns (uint256)
     {
-       return Token(_tokenAddress).balanceOf(address(this));
+       return IERC20(_tokenAddress).balanceOf(address(this));
     }
     
     /* Function     : This function will return Token Locked by the user */
