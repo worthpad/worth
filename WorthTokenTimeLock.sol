@@ -29,7 +29,6 @@ contract WorthTokenTimeLock is Ownable{
     }
     
     uint256 public depositId;
-    uint256[] public allDepositIds;
     mapping (address => uint256[]) public depositsByWithdrawalAddress;
     mapping (uint256 => Items) public lockedToken;
     mapping (address => mapping(address => uint256)) public walletTokenBalance;
@@ -56,7 +55,6 @@ contract WorthTokenTimeLock is Ownable{
         lockedToken[_id].unlockTime = _unlockTime;
         lockedToken[_id].withdrawn = false;
         
-        allDepositIds.push(_id);
         depositsByWithdrawalAddress[_withdrawalAddress].push(_id);
         
         // transfer tokens into contract
@@ -89,7 +87,6 @@ contract WorthTokenTimeLock is Ownable{
             lockedToken[_id].unlockTime = _unlockTimes[i];
             lockedToken[_id].withdrawn = false;
             
-            allDepositIds.push(_id);
             depositsByWithdrawalAddress[_withdrawalAddress].push(_id);
             
             //transfer tokens into contract
@@ -155,14 +152,6 @@ contract WorthTokenTimeLock is Ownable{
     function getTokenBalanceByAddress(address _tokenAddress, address _walletAddress) view public returns (uint256)
     {
        return walletTokenBalance[_tokenAddress][_walletAddress];
-    }
-    
-    /* Function     : This function will return all Lock ID details */
-    /* Parameters   : -- */
-    /* Public View Function */
-    function getAllDepositIds() view public returns (uint256[] memory)
-    {
-        return allDepositIds;
     }
     
     /* Function     : This function will return Lock details */
