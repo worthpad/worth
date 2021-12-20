@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 pragma solidity 0.8.10;
 
@@ -214,7 +215,7 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
 }
 
 /* Main Contract of Worthpad Token starts here */
-contract WorthToken is Context, IERC20, Ownable {
+contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     using SafeMath for uint256;
     using Address for address;
 
@@ -340,7 +341,7 @@ contract WorthToken is Context, IERC20, Ownable {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) public override returns (bool) {
+    function transfer(address recipient, uint256 amount) public override nonReentrant returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -384,7 +385,7 @@ contract WorthToken is Context, IERC20, Ownable {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public override nonReentrant returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
