@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 pragma solidity 0.8.10;
 
@@ -215,7 +214,7 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
 }
 
 /* Main Contract of Worthpad Token starts here */
-contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
+contract WorthToken is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -248,7 +247,6 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
 
     uint256 private numTokensSellToAddToLiquidity = 1 * 10**6 * 10**DECIMALS;
     
-    event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event SwapAndLiquify(
         uint256 tokensSwapped,
@@ -267,7 +265,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     event SetWorthDVCFundWalletEvent(address value);
     event SetLiquidityFeePercentEvent(uint256 value);
     event SetWorthDVCFundFeePercentEvent(uint256 value);
-    event SetMinSellEvent(uint256 value);
+    event SetNumTokensSellToAddToLiquidityEvent(uint256 value);
     event SetMaxTxAmountEvent(uint256 value);
     event SetRouterAddressEvent(address value);
     event BNBWithdrawn(address beneficiary,uint256 value);
@@ -342,7 +340,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) public override nonReentrant returns (bool) {
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -386,7 +384,7 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) public override nonReentrant returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
@@ -651,10 +649,10 @@ contract WorthToken is Context, IERC20, Ownable, ReentrancyGuard {
     /* Function     : Set Minimum amount for swapping to Liquify for Liquidity Addition */
     /* Parameters   : Enter the  Minimum Token to swap */
     /* Only Owner Function */
-    function setMinSell(uint256 amount) external onlyOwner {
+    function setNumTokensSellToAddToLiquidity(uint256 amount) external onlyOwner {
         require(amount > 0 && amount < _maxTxAmount, "Minimum Sell Amount should be greater than 0 and less than max transaction amount");
         numTokensSellToAddToLiquidity = amount * 10**DECIMALS;
-        emit SetMinSellEvent(amount);
+        emit SetNumTokensSellToAddToLiquidityEvent(amount);
     }
 
     /* Function     : Set Max transaction amount for each transfer  */
