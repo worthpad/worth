@@ -76,25 +76,25 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
 
     /* Constructor Arguments : */
     /* 1. WorthToken token contract Address */
-    /* 2. Min Contribution (in USD) */
-    /* 3. Max Contribution (in USD) */
+    /* 2. Min Contribution (in WEI) */
+    /* 3. Max Contribution (in WEI) */
     /* 4. Hard Cap (in USD) */
     /* 5. Claim Date (in UNIX Timestamp) */
     /* 6. USDT token address */
     /* 7. BUSD token address */
-    /* 8. Token ICO Price (in USD) */
+    /* 8. Token ICO Price (in WEI) */
     constructor(address _tokenAddr, uint256 _minContribution,
                 uint256 _maxContribution,uint256 _hardCap,
                 uint256 _claimDate, address _usdtAddr,
                 address _busdAddr, uint256 _tokenPriceUsd) nonZeroAddress(_tokenAddr) nonZeroAddress(_usdtAddr) nonZeroAddress(_busdAddr){
         tokenAddr = _tokenAddr;
-        minContribution = _minContribution.mul(10 ** uint256(tokenDecimal));
-        maxContribution = _maxContribution.mul(10 ** uint256(tokenDecimal));
-        hardCap = _hardCap.mul(10 ** uint256(tokenDecimal));
+        minContribution = _minContribution;
+        maxContribution = _maxContribution;
+        hardCap = _hardCap;
         claimDate = _claimDate;
         usdtAddr = _usdtAddr;
         busdAddr = _busdAddr;
-        tokenPriceUsd = _tokenPriceUsd.mul(10 ** uint256(tokenDecimal));
+        tokenPriceUsd = _tokenPriceUsd;
     }
 
     /* Function     : This function is used to Whitelist address for Sale */
@@ -228,31 +228,31 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     }
 
     /* Function     : Update Token Price */
-    /* Parameters   : New token Price (in USD) */
+    /* Parameters   : New token Price (in WEI) */
     /* Only Owner Function */    
     function updateTokenPrice(uint256 newTokenValue) external onlyOwner {
         require(!contractUp, "Changes are not allowed during Token Sale");
-        tokenPriceUsd = newTokenValue.mul(10 ** uint256(tokenDecimal));
+        tokenPriceUsd = newTokenValue;
         emit TokenPriceUpdated(newTokenValue);
     }
 
-    /* Function     : Update Hard cap of sale (in USD) */
+    /* Function     : Update Hard cap of sale (in WEI) */
     /* Parameters   : New Hard cap (in USD) */
     /* Only Owner Function */
     function updateHardCap(uint256 newHardcapValue) external onlyOwner {
         require(!contractUp, "Changes are not allowed during Token Sale");
-        hardCap = newHardcapValue.mul(10 ** uint256(tokenDecimal));
+        hardCap = newHardcapValue;
         emit HardCapUpdated(newHardcapValue);
     }
 
-    /* Function     : Update Min Max Buy Limits (in USD) */
+    /* Function     : Update Min Max Buy Limits (in WEI) */
     /* Parameters 1 : Min Token */
     /* Parameters 2 : Max Token */
     /* Only Owner Function */
     function updateTokenContribution(uint256 min, uint256 max) external onlyOwner {
         require(!contractUp, "Changes are not allowed during Token Sale");
-        minContribution = min.mul(10 ** uint256(tokenDecimal));
-        maxContribution = max.mul(10 ** uint256(tokenDecimal));
+        minContribution = min;
+        maxContribution = max;
         emit MinMaxUpdated(min,max);
     }
     
