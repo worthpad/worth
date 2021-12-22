@@ -2,6 +2,10 @@
 
 Worthpad is an innovative, decentralized, multi-chain DeFi platform that makes investing in DeFi and crypto projects easy and accessible for the masses. Worthpad empowers high growth potential crypto projects with the ability to raise liquidity in a fair manner while also developing dedicated communities behind them. Worthpad brings the capabilities of traditional venture capital to $WORTH holders through its innovative use of the best technologies available in the DeFi space.
 
+Worthpad DeFi Platform: https://worthpad.org
+
+Worthpad Official Website: https://worthpad.io
+
 Worthpad offers a professional and hassle-free fundraising environment to innovative projects and a safe investment ecosystem with unlimited earning potential to $WORTH investors.
 
 Worthpad ecosystem is powered by the $WORTH Token. 
