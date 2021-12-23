@@ -269,7 +269,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Parameters 1 : Address where token should be sent */
     /* Parameters 2 : Token Address */
     /* Only Owner Function */
-    function withdrawTokens(address beneficiary, address _tokenAddr) external nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
+    function withdrawTokens(address beneficiary, address _tokenAddr) external nonReentrant nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
         IERC20(_tokenAddr).safeTransfer(beneficiary, IERC20(_tokenAddr).balanceOf(address(this)));
         emit TokenWithdrawn(_tokenAddr, IERC20(_tokenAddr).balanceOf(address(this)));
     }
@@ -277,7 +277,7 @@ contract WorthTokenSale is ReentrancyGuard, Context, Ownable {
     /* Function     : Withdraws Funds after sale */
     /* Parameters   : Address where Funds should be sent */
     /* Only Owner Function */
-    function withdrawCrypto(address payable beneficiary) external nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
+    function withdrawCrypto(address payable beneficiary) external nonReentrant nonZeroAddress(beneficiary) onlyOwner _contractUp() _saleEnded() {
         require(address(this).balance>0,"No Crypto inside contract");
         (bool success, ) = beneficiary.call{value:address(this).balance}("");
         require(success, "Transfer failed.");
