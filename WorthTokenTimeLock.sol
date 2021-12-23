@@ -89,16 +89,16 @@ contract WorthTokenTimeLock is Ownable{
     
     /* Function     : This function will Extend the lock duration of the Locked tokens */
     /* Parameters 1 : Lock ID */
-    /* Parameters 2 : Unlock Time - in UNIX Timestamp */
+    /* Parameters 2 : Extend Lock Duration - in UNIX Timestamp */
     /* Public Function */
-    function extendLockDuration(uint256 _id, uint256 _unlockTime) external {
-        require(_unlockTime <= 3217825449, "Enter a valid unlock time");
+    function extendLockDuration(uint256 _id, uint256 _extendedLockDuration) external {
+        require(_extendedLockDuration <= 3217825449, "Enter a valid unlock time");
         require(!lockedToken[_id].withdrawn, "Tokens already withdrawn");
         require(msg.sender == lockedToken[_id].withdrawalAddress,"Not the same withdrawal address");
-        require(_unlockTime >= lockedToken[_id].unlockTime,"Cannot have time duration less than the previous one");
+        require(_extendedLockDuration >= lockedToken[_id].unlockTime,"Cannot have a lock time duration less than the previous one");
         
         //set new unlock time
-        lockedToken[_id].unlockTime = _unlockTime;
+        lockedToken[_id].unlockTime = _extendedLockDuration;
     }
     
     /* Function     : This function will withdraw the tokens once lock time is reached */
